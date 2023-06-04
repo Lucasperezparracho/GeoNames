@@ -5,7 +5,8 @@ import geonames.views.View;
 
 public class Main {
     public static void main(String[] args) {
-        ApplicationController controller = new ApplicationController();
+        String username = "luquinhan03";
+        ApplicationController controller = new ApplicationController(username);
         View view = new View(controller);
         view.setVisible(true);
     }

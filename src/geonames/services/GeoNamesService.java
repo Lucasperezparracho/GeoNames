@@ -1,27 +1,25 @@
 package geonames.services;
 
 import geonames.models.Place;
-import geonames.utils.HttpService;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GeoNamesService {
+    private String username;
 
-    private HttpService httpService;
-    private final String username = "luquinhan03";
-
-    public GeoNamesService() {
-        httpService = new HttpService();
+    public GeoNamesService(String username) {
+        this.username = username;
     }
 
-    public List<Place> searchPlaces(String query) {
+    public List<Place> searchPlaces(String query, double myLat, double myLng) {
         List<Place> places = new ArrayList<>();
 
         try {
@@ -51,7 +49,11 @@ public class GeoNamesService {
                 String name = placeJson.getString("name");
                 double lat = placeJson.getDouble("lat");
                 double lng = placeJson.getDouble("lng");
-                Place place = new Place(geonameId, name, lat, lng,0);
+
+                // Calcular la distancia desde el punto de origen a este lugar
+                double distance = calculateDistanceDifference(myLat, myLng, lat, lng);
+
+                Place place = new Place(geonameId, name, lat, lng, distance);
                 places.add(place);
             }
 
@@ -75,7 +77,7 @@ public class GeoNamesService {
                 throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
             }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
             String output;
             StringBuilder responseBuilder = new StringBuilder();
@@ -87,10 +89,12 @@ public class GeoNamesService {
             String name = response.getString("name");
             double lat = response.getDouble("lat");
             double lng = response.getDouble("lng");
+            double distance = response.getDouble("distance");
+            Place place = new Place(geonameId, name, lat, lng, distance);
 
             conn.disconnect();
 
-            return new Place(geonameId, name, lat, lng,0);
+            return place;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -98,60 +102,35 @@ public class GeoNamesService {
         return null;
     }
 
-    public List<Place> getNearbyPlaces(double latitude, double longitude, int radius) {
-        List<Place> places = new ArrayList<>();
-
-        try {
-            String urlString = "http://api.geonames.org/findNearbyJSON?lat=" + latitude + "&lng=" + longitude + "&radius=" + radius + "&username=" + username;
-            URL url = new URL(urlString);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
-
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
-            }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-
-            String output;
-            StringBuilder responseBuilder = new StringBuilder();
-            while ((output = br.readLine()) != null) {
-                responseBuilder.append(output);
-            }
-
-            JSONObject response = new JSONObject(responseBuilder.toString());
-            JSONArray geonames = response.getJSONArray("geonames");
-            for (int i = 0; i < geonames.length(); i++) {
-                JSONObject placeObject = geonames.getJSONObject(i);
-                int geonameId = placeObject.getInt("geonameId");
-                String name = placeObject.getString("name");
-                double lat = placeObject.getDouble("lat");
-                double lng = placeObject.getDouble("lng");
-                double distance = calculateDistance(latitude, longitude, lat, lng);
-                Place place = new Place(geonameId, name, lat, lng, distance);
-                places.add(place);
-            }
-
-            conn.disconnect();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return places;
-    }
-
     private double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
-        double earthRadius = 6371; // Radio de la Tierra en kilómetros
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLng = Math.toRadians(lng2 - lng1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = earthRadius * c * 1000; // Distancia en metros
-        return distance;
-    }
+    // Radio de la Tierra en kilómetros
+    double earthRadius = 6371.0;
+
+    // Convertir las coordenadas de grados a radianes
+    double lat1Rad = Math.toRadians(lat1);
+    double lng1Rad = Math.toRadians(lng1);
+    double lat2Rad = Math.toRadians(lat2);
+    double lng2Rad = Math.toRadians(lng2);
+
+    // Diferencias de latitud y longitud entre los dos puntos
+    double latDiff = lat2Rad - lat1Rad;
+    double lngDiff = lng2Rad - lng1Rad;
+
+    // Calcular la distancia utilizando la fórmula de Haversine
+    double a = Math.sin(latDiff / 2) * Math.sin(latDiff / 2)
+            + Math.cos(lat1Rad) * Math.cos(lat2Rad)
+            * Math.sin(lngDiff / 2) * Math.sin(lngDiff / 2);
+    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    double distance = earthRadius * c;
+
+    return distance;
+}
+    public double calculateDistanceDifference(double myLat, double myLng, double placeLat, double placeLng) {
+    double myDistance = calculateDistance(myLat, myLng, placeLat, placeLng);
+    double placeDistance = calculateDistance(placeLat, placeLng, placeLat, placeLng);
+    double difference = myDistance - placeDistance;
+
+    return difference;
+}
 
 }

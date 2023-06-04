@@ -1,9 +1,11 @@
+// View.java
 package geonames.views;
 
 import geonames.controllers.ApplicationController;
 import geonames.models.Place;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,13 +16,15 @@ public class View extends JFrame {
 
     private JTextField searchTextField;
     private JTextArea resultTextArea;
+    private JTable favoritesTable;
+    private JTable historyTable;
 
     public View(ApplicationController controller) {
         this.controller = controller;
 
         setTitle("GeoNames Search");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400, 300);
+        setSize(800, 600);
         setLayout(new BorderLayout());
 
         JPanel searchPanel = createSearchPanel();
@@ -29,6 +33,9 @@ public class View extends JFrame {
         resultTextArea = new JTextArea();
         JScrollPane resultScrollPane = new JScrollPane(resultTextArea);
         add(resultScrollPane, BorderLayout.CENTER);
+
+        createFavoritesTable();
+        createHistoryTable();
     }
 
     private JPanel createSearchPanel() {
@@ -47,8 +54,11 @@ public class View extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 String searchName = searchTextField.getText();
                 if (!searchName.isEmpty()) {
-                    List<Place> places = controller.searchPlaces(searchName);
+                    List<Place> places = controller.searchPlaces(searchName, 0, 0);
                     displayPlaces(places);
+
+                    // Añadir la búsqueda al historial
+                    controller.addToSearchHistory(searchName);
                 }
             }
         });
@@ -66,9 +76,49 @@ public class View extends JFrame {
                 resultTextArea.append("Name: " + place.getName() + "\n");
                 resultTextArea.append("Latitude: " + place.getLatitude() + "\n");
                 resultTextArea.append("Longitude: " + place.getLongitude() + "\n");
-                resultTextArea.append("Distance: " + place.getDistance() + " meters\n");
+                resultTextArea.append("Distance: " + place.getDistance() + "\n");
                 resultTextArea.append("\n");
             }
         }
+    }
+
+    private void createFavoritesTable() {
+        List<Place> favorites = controller.getFavorites();
+        Object[][] data = new Object[favorites.size()][4];
+        for (int i = 0; i < favorites.size(); i++) {
+            Place place = favorites.get(i);
+            data[i][0] = place.getName();
+            data[i][1] = place.getLatitude();
+            data[i][2] = place.getLongitude();
+            data[i][3] = place.getDistance();
+        }
+        String[] columnNames = {"Name", "Latitude", "Longitude", "Distance"};
+        DefaultTableModel model = new DefaultTableModel(data, columnNames);
+        favoritesTable = new JTable(model);
+        JScrollPane scrollPane = new JScrollPane(favoritesTable);
+        JPanel favoritesPanel = new JPanel();
+        favoritesPanel.setBorder(BorderFactory.createTitledBorder("Favorites"));
+        favoritesPanel.setLayout(new BorderLayout());
+        favoritesPanel.add(scrollPane, BorderLayout.CENTER);
+
+        add(favoritesPanel, BorderLayout.WEST);
+    }
+
+    private void createHistoryTable() {
+        List<String> searchHistory = controller.getSearchHistory();
+        Object[][] data = new Object[searchHistory.size()][1];
+        for (int i = 0; i < searchHistory.size(); i++) {
+            data[i][0] = searchHistory.get(i);
+        }
+        String[] columnNames = {"Search History"};
+        DefaultTableModel model = new DefaultTableModel(data, columnNames);
+        historyTable = new JTable(model);
+        JScrollPane scrollPane = new JScrollPane(historyTable);
+        JPanel historyPanel = new JPanel();
+        historyPanel.setBorder(BorderFactory.createTitledBorder("Search History"));
+        historyPanel.setLayout(new BorderLayout());
+        historyPanel.add(scrollPane, BorderLayout.CENTER);
+
+        add(historyPanel, BorderLayout.EAST);
     }
 }

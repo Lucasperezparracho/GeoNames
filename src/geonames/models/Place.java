@@ -15,22 +15,45 @@ public class Place {
         this.distance = distance;
     }
 
+    // Getters and setters
+
     public int getGeonameId() {
         return geonameId;
+    }
+
+    public void setGeonameId(int geonameId) {
+        this.geonameId = geonameId;
     }
 
     public String getName() {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public double getLatitude() {
         return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 
     public double getLongitude() {
         return longitude;
     }
-    public double getDistance(){
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public double getDistance() {
         return distance;
+    }
+
+    public void setDistance(double distance) {
+        this.distance = distance;
     }
 }
