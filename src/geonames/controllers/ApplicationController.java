@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ApplicationController {
+
     private GeoNamesService geoNamesService;
     private List<Place> favorites;
     private List<String> searchHistory;
@@ -30,6 +31,11 @@ public class ApplicationController {
 
     public void addToFavorites(Place place) {
         favorites.add(place);
+        database.insertFavoritePlace(place.getName(), place.getLatitude(), place.getLongitude(), place.getDistance());
+    }
+
+    public void removeFromFavorites(Place place) {
+        favorites.remove(place);
     }
 
     public List<Place> getFavorites() {

@@ -8,8 +8,9 @@ import java.util.List;
 public class Database {
     private static final String DB_URL = "jdbc:sqlite:geonames.db";
     private static final String CREATE_TABLE_QUERY = "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, query TEXT)";    
+    private static final String CREATE_FAVORITES_TABLE_QUERY = "CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, latitude REAL, longitude REAL, distance REAL)";
     private static final String INSERT_QUERY = "INSERT INTO history VALUES (NULL, ?)";
-    private static final String SELECT_QUERY = "SELECT query FROM history";
+    private static final String SELECT_QUERY = "SELECT * FROM history";
 
     private Connection connection;
 
@@ -50,7 +51,7 @@ public class Database {
              ResultSet rs = stmt.executeQuery(SELECT_QUERY)) {
 
             while (rs.next()) {
-                String searchQuery = rs.getString("query");
+                String searchQuery = rs.getString("search_query");
                 searchHistory.add(searchQuery);
             }
 
@@ -60,4 +61,16 @@ public class Database {
 
         return searchHistory;
     }
+    public void insertFavoritePlace(String name, double latitude, double longitude, double distance) {
+    try (PreparedStatement statement = connection.prepareStatement(CREATE_FAVORITES_TABLE_QUERY)) {
+        statement.setString(1, name);
+        statement.setDouble(2, latitude);
+        statement.setDouble(3, longitude);
+        statement.setDouble(4, distance);
+        statement.executeUpdate();
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+
 }

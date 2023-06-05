@@ -34,7 +34,7 @@ public class View extends JFrame {
         JScrollPane resultScrollPane = new JScrollPane(resultTextArea);
         add(resultScrollPane, BorderLayout.CENTER);
 
-        createFavoritesTable();
+        //createFavoritesTable();
         createHistoryTable();
     }
 
@@ -78,6 +78,16 @@ public class View extends JFrame {
                 resultTextArea.append("Longitude: " + place.getLongitude() + "\n");
                 resultTextArea.append("Distance: " + place.getDistance() + "\n");
                 resultTextArea.append("\n");
+                JButton addToFavoritesButton = new JButton("Agregar a favoritos");
+        addToFavoritesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controller.addToFavorites(place);
+            }
+        });
+        resultTextArea.append(" ");
+        resultTextArea.add(addToFavoritesButton);
+
             }
         }
     }
